@@ -7,6 +7,7 @@ import SectionHeading from "./SectionHeading";
 import { personalData } from "../data/personalData";
 import { slideRight, slideLeft, viewportOnce } from "../utils/motionVariants";
 
+
 const initialForm = { name: "", email: "", subject: "", message: "" };
 
 export default function Contact() {
@@ -14,46 +15,80 @@ export default function Contact() {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState(null); // null | 'sending' | 'success' | 'error'
 
-  const validate = () => {
-    const newErrors = {};
-    if (!form.name.trim()) newErrors.name = "Name is required";
-    if (!form.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = "Enter a valid email address";
-    }
-    if (!form.subject.trim()) newErrors.subject = "Subject is required";
-    if (!form.message.trim()) {
-      newErrors.message = "Message is required";
-    } else if (form.message.trim().length < 10) {
-      newErrors.message = "Message should be at least 10 characters";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+ const validate = () => {
+  const newErrors = {};
 
+  if (!form.name.trim()) {
+    newErrors.name = "Name is required";
+  }
+
+  if (!form.email.trim()) {
+    newErrors.email = "Email is required";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    newErrors.email = "Enter a valid email address";
+  }
+
+  if (!form.subject.trim()) {
+    newErrors.subject = "Subject is required";
+  }
+
+  if (!form.message.trim()) {
+    newErrors.message = "Message is required";
+  } else if (form.message.trim().length < 10) {
+    newErrors.message = "Message should be at least 10 characters";
+  }
+
+  setErrors(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: undefined });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setStatus("sending");
-    try {
-      // Replace with your actual API endpoint / EmailJS / Formspree integration
-      // Example: await axios.post('https://your-api.com/contact', form);
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+  if (!validate()) return;
+
+  setStatus("sending");
+
+  try {
+    const response = await fetch("https://formspree.io/f/mvkpaely", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      }),
+    });
+
+    if (response.ok) {
       setStatus("success");
       setForm(initialForm);
-      setTimeout(() => setStatus(null), 4000);
-    } catch (err) {
+      setErrors({});
+
+      setTimeout(() => {
+        setStatus(null);
+      }, 4000);
+    } else {
       setStatus("error");
-      setTimeout(() => setStatus(null), 4000);
     }
-  };
+  } catch (error) {
+    console.error("Form submission error:", error);
+    setStatus("error");
+
+    setTimeout(() => {
+      setStatus(null);
+    }, 4000);
+  }
+};
 
   return (
     <section id="contact" className="section-container">
